@@ -1,0 +1,54 @@
+Senior DevOps Engineer — CloudMatrix Inc.
+
+Location: Bangalore, India (Hybrid — 3 days/week in office)
+Department: Platform Engineering
+Reports To: VP of Engineering
+
+About CloudMatrix:
+CloudMatrix is a fast-growing B2B SaaS company building next-generation cloud infrastructure management tools. Our platform helps enterprises manage multi-cloud environments across AWS, Azure, and GCP. We serve 500+ enterprise customers globally and process 2 billion+ API calls daily.
+
+Role Overview:
+We are looking for a Senior DevOps Engineer to own and evolve our CI/CD pipelines, cloud infrastructure, and observability stack. You'll work closely with development teams to ensure smooth, reliable, and secure deployments across our microservices architecture.
+
+Key Responsibilities:
+- Design, build, and maintain CI/CD pipelines for 50+ microservices using GitHub Actions and ArgoCD
+- Manage and optimize Kubernetes clusters (EKS) running 200+ pods across multiple environments
+- Implement Infrastructure as Code using Terraform and CloudFormation
+- Build and maintain observability stack (Prometheus, Grafana, ELK, Datadog)
+- Automate security scanning, compliance checks, and vulnerability management
+- Manage cloud costs and optimize resource utilization across AWS accounts
+- Implement disaster recovery and high availability strategies
+- Collaborate with development teams on containerization and deployment best practices
+- On-call rotation for production infrastructure (1 week per month)
+
+Must-Have Skills:
+- AWS (EC2, EKS, S3, RDS, Lambda, VPC, IAM)
+- Kubernetes & Docker
+- Terraform
+- CI/CD (GitHub Actions, Jenkins, or ArgoCD)
+- Linux system administration
+- Networking (DNS, load balancing, VPN, firewalls)
+- Python or Bash scripting
+- Monitoring & observability (Prometheus, Grafana, or Datadog)
+
+Nice-to-Have Skills:
+- Helm charts
+- Service mesh (Istio or Linkerd)
+- HashiCorp Vault
+- Ansible or Chef
+- Cost optimization tools (AWS Cost Explorer, Kubecost)
+- SOC2/ISO27001 compliance experience
+
+Experience:
+- 4-8 years of DevOps/SRE/Platform Engineering experience
+- Experience managing production Kubernetes clusters at scale
+
+Education:
+- Bachelor's degree in Computer Science, IT, or related field
+
+Compensation:
+- INR 30-50 LPA based on experience
+- ESOPs, health insurance, learning budget, remote work flexibility
+
+How to Apply:
+Send your resume and a brief note about a challenging infrastructure problem you solved to careers@cloudmatrix.io

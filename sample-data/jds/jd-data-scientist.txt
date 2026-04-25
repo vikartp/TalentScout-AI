@@ -1,0 +1,39 @@
+Data Scientist — Machine Learning
+
+Company: QuantumLeap Analytics
+Location: Remote (India)
+Department: Data Science & AI
+Seniority: Mid-Senior
+
+About the Role:
+Join our data science team to build ML models that power real-time recommendations and predictive analytics for our e-commerce clients. You'll work with large-scale datasets, deploy models to production, and collaborate closely with engineering teams.
+
+Must-Have Skills:
+- Python (NumPy, Pandas, Scikit-learn)
+- Machine Learning (supervised & unsupervised)
+- Deep Learning frameworks (TensorFlow or PyTorch)
+- SQL and data manipulation
+- Feature engineering and model evaluation
+- Experience with production ML deployment
+
+Nice-to-Have Skills:
+- NLP / LLM fine-tuning
+- MLOps (MLflow, Kubeflow, or similar)
+- Spark / distributed computing
+- A/B testing and experimentation
+- Cloud ML services (SageMaker, Vertex AI)
+- Statistics and causal inference
+
+Experience: 3-6 years in data science or machine learning roles
+
+Education: Master's or PhD in Computer Science, Statistics, Mathematics, or related field preferred
+
+Responsibilities:
+- Develop and deploy ML models for recommendation and prediction systems
+- Analyze large datasets to extract actionable insights
+- Build and maintain ML pipelines for training and serving
+- Collaborate with product and engineering teams to integrate models
+- Stay current with latest ML research and techniques
+- Present findings and model performance to stakeholders
+
+Salary Range: 18-30 LPA

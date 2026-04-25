@@ -143,14 +143,14 @@ flowchart TB
     JDP -->|Parse & structure| LLM
     RP -->|Extract profile| LLM
     RP -->|Generate embedding| EMB
-    ME -->|Semantic similarity| EMB
+    RP -->|Store embedding| VEC
+    ME -->|Semantic similarity| VEC
     ME -->|Match explanation| LLM
     CA -->|Multi-turn conversation| LLM
     CA -->|Score interest| LLM
 
     JDP -->|Store parsed JD| SQL
     RP -->|Store profile| SQL
-    RP -->|Store vector| VEC
     ME -->|Store results| SQL
     CA -->|Store transcript| SQL
     RE -->|Read scores| SQL

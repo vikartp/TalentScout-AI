@@ -4,6 +4,7 @@ from sqlmodel import SQLModel
 
 from app.api import jd, candidates, matching, conversations, shortlist
 from app.db.database import create_db_and_tables, engine
+from app.db.vector_store import get_or_create_collection
 
 app = FastAPI(
     title="TalentScout AI",
@@ -38,8 +39,15 @@ def root():
 
 @app.delete("/api/reset")
 async def reset_database():
-    """Drop all tables and recreate them — clears all data."""
+    """Drop all tables and recreate them — clears all data, including ChromaDB embeddings."""
+    # Wipe ChromaDB 'resumes' collection
+    try:
+        collection = get_or_create_collection("resumes")
+        collection.delete(where={})  # Delete all embeddings in the collection
+    except Exception:
+        pass
+
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
-    return {"message": "Database cleared successfully"}
+    return {"message": "Database and vector store cleared successfully"}

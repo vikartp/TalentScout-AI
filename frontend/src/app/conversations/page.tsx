@@ -207,11 +207,12 @@ export default function ConversationsPage() {
                   >
                     {msg.role === "recruiter" && <Bot className="h-5 w-5 text-indigo-500 shrink-0 mt-1" />}
                     <div
-                      className={`max-w-[80%] p-3 rounded-xl text-sm ${
+                      className={`p-3 rounded-xl text-sm break-words ${
                         msg.role === "recruiter"
                           ? "bg-indigo-50 dark:bg-indigo-950 text-gray-800 dark:text-gray-200"
                           : "bg-gray-100 dark:bg-neutral-800 text-gray-800 dark:text-gray-200"
                       }`}
+                      style={{width: "fit-content", maxWidth: "100%", wordBreak: "break-word"}}
                     >
                       {msg.content}
                     </div>
@@ -221,7 +222,7 @@ export default function ConversationsPage() {
                 {viewingConvo?.scores && (
                   <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950 rounded-lg text-sm">
                     <p className="font-medium text-amber-800 dark:text-amber-300 mb-1">Interest Score Analysis</p>
-                    <pre className="text-xs text-amber-700 dark:text-amber-400">
+                    <pre className="text-xs text-amber-700 dark:text-amber-400 break-all whitespace-pre-wrap">
                       {JSON.stringify(viewingConvo.scores, null, 2)}
                     </pre>
                   </div>

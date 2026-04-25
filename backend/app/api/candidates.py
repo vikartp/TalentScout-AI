@@ -127,6 +127,13 @@ async def get_candidate(candidate_id: int, session: AsyncSession = Depends(get_s
     }
 
 
+@router.delete("/clear")
+async def clear_candidates(session: AsyncSession = Depends(get_session)):
+    await session.execute(delete(Candidate))
+    await session.commit()
+    return {"message": "All candidates cleared"}
+
+
 @router.delete("/{candidate_id}")
 async def delete_candidate(candidate_id: int, session: AsyncSession = Depends(get_session)):
     candidate = await session.get(Candidate, candidate_id)
@@ -147,10 +154,3 @@ async def delete_candidate(candidate_id: int, session: AsyncSession = Depends(ge
     await session.delete(candidate)
     await session.commit()
     return {"message": f"Candidate {candidate_id} and related data deleted"}
-
-
-@router.delete("/clear")
-async def clear_candidates(session: AsyncSession = Depends(get_session)):
-    await session.execute(delete(Candidate))
-    await session.commit()
-    return {"message": "All candidates cleared"}

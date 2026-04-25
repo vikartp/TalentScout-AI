@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { parseJD, listJDs, getJD, clearJDs } from "@/lib/api";
-import { FileText, Plus, Loader2, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { FileText, Plus, Loader2, ChevronDown, ChevronUp, Trash2, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default function JDPage() {
   const [jdText, setJdText] = useState("");
@@ -66,20 +67,30 @@ export default function JDPage() {
           <FileText className="h-6 w-6 text-blue-600" />
           Job Descriptions
         </h1>
-        {jds.length > 0 && (
-          <button
-            onClick={async () => {
-              if (!confirm("Delete all job descriptions?")) return;
-              await clearJDs();
-              setJds([]);
-              setExpandedId(null);
-              setExpandedData(null);
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors cursor-pointer"
-          >
-            <Trash2 className="h-3.5 w-3.5" /> Clear All
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {jds.length > 0 && (
+            <button
+              onClick={async () => {
+                if (!confirm("Delete all job descriptions?")) return;
+                await clearJDs();
+                setJds([]);
+                setExpandedId(null);
+                setExpandedData(null);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors cursor-pointer"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Clear All
+            </button>
+          )}
+          {jds.length > 0 && (
+            <Link
+              href="/candidates"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+            >
+              Next: Upload Resumes <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Input */}
@@ -143,6 +154,7 @@ export default function JDPage() {
           <p className="text-gray-400 text-center py-8">No job descriptions yet. Paste one above to get started.</p>
         )}
       </div>
+
     </div>
   );
 }

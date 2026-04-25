@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { uploadResumes, listCandidates, clearCandidates } from "@/lib/api";
-import { Users, Upload, Loader2, FileUp, Trash2 } from "lucide-react";
+import { uploadResumes, listCandidates, clearCandidates, deleteCandidate } from "@/lib/api";
+import { Users, Upload, Loader2, FileUp, Trash2, X, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default function CandidatesPage() {
   const [uploading, setUploading] = useState(false);
@@ -23,6 +24,7 @@ export default function CandidatesPage() {
     }[]
   >([]);
   const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState<number | null>(null);
 
   useEffect(() => {
     loadCandidates();
@@ -34,6 +36,19 @@ export default function CandidatesPage() {
       setCandidates(data);
     } catch {
       /* ignore */
+    }
+  }
+
+  async function handleDelete(id: number, name: string) {
+    if (!confirm(`Delete ${name}? This will also remove their matches and conversations.`)) return;
+    setDeleting(id);
+    try {
+      await deleteCandidate(id);
+      setCandidates((prev) => prev.filter((c) => c.id !== id));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setDeleting(null);
     }
   }
 
@@ -69,18 +84,28 @@ export default function CandidatesPage() {
           <Users className="h-6 w-6 text-green-600" />
           Candidates
         </h1>
-        {candidates.length > 0 && (
-          <button
-            onClick={async () => {
-              if (!confirm("Delete all candidates?")) return;
-              await clearCandidates();
-              setCandidates([]);
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors cursor-pointer"
-          >
-            <Trash2 className="h-3.5 w-3.5" /> Clear All
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {candidates.length > 0 && (
+            <button
+              onClick={async () => {
+                if (!confirm("Delete all candidates?")) return;
+                await clearCandidates();
+                setCandidates([]);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors cursor-pointer"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Clear All
+            </button>
+          )}
+          {candidates.length > 0 && (
+            <Link
+              href="/matching"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+            >
+              Next: Match Candidates <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Upload */}
@@ -150,9 +175,23 @@ export default function CandidatesPage() {
                   {c.total_experience_years ? `${c.total_experience_years}y exp` : "Exp unknown"}
                 </p>
               </div>
-              <span className="text-xs text-gray-400 bg-gray-100 dark:bg-neutral-800 px-2 py-1 rounded">
-                {c.filename}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 bg-gray-100 dark:bg-neutral-800 px-2 py-1 rounded">
+                  {c.filename}
+                </span>
+                <button
+                  onClick={() => handleDelete(c.id, c.name)}
+                  disabled={deleting === c.id}
+                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+                  title={`Delete ${c.name}`}
+                >
+                  {deleting === c.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <X className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
             {c.skills.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
@@ -175,6 +214,8 @@ export default function CandidatesPage() {
           <p className="text-gray-400 text-center py-8">No candidates yet. Upload resumes above.</p>
         )}
       </div>
+
+
     </div>
   );
 }

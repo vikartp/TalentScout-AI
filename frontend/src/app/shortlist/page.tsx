@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { listJDs, getShortlist } from "@/lib/api";
-import { ListOrdered, Download, ChevronDown, ChevronUp } from "lucide-react";
+import { ListOrdered, Download, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 type ShortlistItem = {
   candidate_id: number;
@@ -34,7 +35,10 @@ export default function ShortlistPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    listJDs().then(setJds).catch(() => {});
+    listJDs().then((data) => {
+      setJds(data);
+      if (data.length > 0) setSelectedJd(data[0].id);
+    }).catch(() => {});
   }, []);
 
   async function handleLoad() {
@@ -181,9 +185,13 @@ export default function ShortlistPage() {
                     </div>
                   )}
                   {c.conversation_status === "not_started" && (
-                    <p className="text-xs text-gray-400">
-                      Outreach not yet conducted. Go to Conversations to engage this candidate.
-                    </p>
+                    <Link
+                      href="/conversations"
+                      className="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-medium"
+                    >
+                      <ArrowLeft className="h-3 w-3" />
+                      Go to Conversations to engage this candidate
+                    </Link>
                   )}
                 </div>
               )}

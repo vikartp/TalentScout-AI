@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { listJDs, getMatchResults, startConversation, listConversationsByJD, getConversation, clearConversations } from "@/lib/api";
-import { MessageSquare, Loader2, User, Bot, Trash2 } from "lucide-react";
+import { MessageSquare, Loader2, User, Bot, Trash2, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 type ConvoResult = {
   id: number;
@@ -28,7 +29,10 @@ export default function ConversationsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    listJDs().then(setJds).catch(() => {});
+    listJDs().then((data) => {
+      setJds(data);
+      if (data.length > 0) loadData(data[0].id);
+    }).catch(() => {});
   }, []);
 
   async function loadData(jdId: number) {
@@ -92,20 +96,30 @@ export default function ConversationsPage() {
           <MessageSquare className="h-6 w-6 text-orange-600" />
           Conversational Outreach
         </h1>
-        {conversations.length > 0 && (
-          <button
-            onClick={async () => {
-              if (!confirm("Delete all conversations?")) return;
-              await clearConversations();
-              setConversations([]);
-              setTranscript([]);
-              setViewingConvo(null);
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors cursor-pointer"
-          >
-            <Trash2 className="h-3.5 w-3.5" /> Clear All
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {conversations.length > 0 && (
+            <button
+              onClick={async () => {
+                if (!confirm("Delete all conversations?")) return;
+                await clearConversations();
+                setConversations([]);
+                setTranscript([]);
+                setViewingConvo(null);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors cursor-pointer"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Clear All
+            </button>
+          )}
+          {conversations.length > 0 && (
+            <Link
+              href="/shortlist"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors"
+            >
+              Next: View Shortlist <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* JD Selector */}
@@ -221,6 +235,7 @@ export default function ConversationsPage() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }

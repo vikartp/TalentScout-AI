@@ -90,6 +90,10 @@ export async function listCandidates() {
   >("/api/candidates");
 }
 
+export async function deleteCandidate(id: number) {
+  return request<{ message: string }>(`/api/candidates/${id}`, { method: "DELETE" });
+}
+
 export async function getCandidate(id: number) {
   return request<Record<string, unknown>>(`/api/candidates/${id}`);
 }

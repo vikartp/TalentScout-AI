@@ -8,6 +8,8 @@ from sqlmodel import select, delete
 from app.db.database import get_session
 from app.db.vector_store import embeddings, get_or_create_collection
 from app.models.candidate import Candidate
+from app.models.match import MatchResult
+from app.models.conversation import Conversation
 from app.services.resume_parser import extract_text, parse_resume
 
 router = APIRouter()
@@ -123,6 +125,28 @@ async def get_candidate(candidate_id: int, session: AsyncSession = Depends(get_s
         "filename": candidate.filename,
         "created_at": candidate.created_at,
     }
+
+
+@router.delete("/{candidate_id}")
+async def delete_candidate(candidate_id: int, session: AsyncSession = Depends(get_session)):
+    candidate = await session.get(Candidate, candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+
+    # Cascade: delete related matches and conversations
+    await session.execute(delete(MatchResult).where(MatchResult.candidate_id == candidate_id))
+    await session.execute(delete(Conversation).where(Conversation.candidate_id == candidate_id))
+
+    # Remove from ChromaDB
+    try:
+        collection = get_or_create_collection("resumes")
+        collection.delete(ids=[str(candidate_id)])
+    except Exception:
+        pass
+
+    await session.delete(candidate)
+    await session.commit()
+    return {"message": f"Candidate {candidate_id} and related data deleted"}
 
 
 @router.delete("/clear")

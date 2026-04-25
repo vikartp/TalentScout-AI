@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { listJDs, runMatching, getMatchResults, clearMatches } from "@/lib/api";
-import { GitCompareArrows, Loader2, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { GitCompareArrows, Loader2, ChevronDown, ChevronUp, Trash2, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 type MatchItem = {
   candidate_id: number;
@@ -28,7 +29,10 @@ export default function MatchingPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useEffect(() => {
-    listJDs().then(setJds).catch(() => {});
+    listJDs().then((data) => {
+      setJds(data);
+      if (data.length > 0) setSelectedJd(data[0].id);
+    }).catch(() => {});
   }, []);
 
   async function handleRunMatching() {
@@ -79,18 +83,28 @@ export default function MatchingPage() {
           <GitCompareArrows className="h-6 w-6 text-purple-600" />
           Candidate Matching
         </h1>
-        {matches.length > 0 && (
-          <button
-            onClick={async () => {
-              if (!confirm("Delete all match results?")) return;
-              await clearMatches();
-              setMatches([]);
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors cursor-pointer"
-          >
-            <Trash2 className="h-3.5 w-3.5" /> Clear All
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {matches.length > 0 && (
+            <button
+              onClick={async () => {
+                if (!confirm("Delete all match results?")) return;
+                await clearMatches();
+                setMatches([]);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors cursor-pointer"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Clear All
+            </button>
+          )}
+          {matches.length > 0 && (
+            <Link
+              href="/conversations"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors"
+            >
+              Next: Engage Candidates <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* JD Selector */}
@@ -185,6 +199,7 @@ export default function MatchingPage() {
           ))}
         </div>
       )}
+
     </div>
   );
 }

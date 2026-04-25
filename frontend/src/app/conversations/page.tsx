@@ -229,7 +229,7 @@ export default function ConversationsPage() {
               </div>
             ) : (
               <p className="text-gray-400 text-sm text-center py-20">
-                Select a candidate and click &quot;Engage&quot; to start a conversation.
+                Click &quot;Engage&quot; to start a conversation with a candidate.
               </p>
             )}
           </div>

@@ -37,6 +37,7 @@ export default function AutopilotPage() {
   const router = useRouter();
   const [jdText, setJdText] = useState("");
   const [zipFile, setZipFile] = useState<File | null>(null);
+  const [zipFileName, setZipFileName] = useState("");
   const [running, setRunning] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [error, setError] = useState("");
@@ -46,7 +47,53 @@ export default function AutopilotPage() {
   const [candidatesProcessed, setCandidatesProcessed] = useState(0);
   const logEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const [loadingSample, setLoadingSample] = useState(false);
+  const [isRestored, setIsRestored] = useState(false);
+
+  // Clean up WebSocket on unmount
+  useEffect(() => {
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+    };
+  }, []);
+
+  // Restore state from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("talentScout_autopilotState");
+      if (saved) {
+        const state = JSON.parse(saved);
+        setJdText(state.jdText || "");
+        setZipFileName(state.zipFileName || "");
+        setCompleted(state.completed || false);
+        setError(state.error || "");
+        setStepsLog(state.stepsLog || []);
+        setResultJdId(state.resultJdId || null);
+        setActiveStep(state.activeStep ?? -1);
+        setCandidatesProcessed(state.candidatesProcessed || 0);
+      }
+    } catch (e) {
+      console.error("Could not restore Autopilot state", e);
+    }
+    setIsRestored(true);
+  }, []);
+
+  // Save state to sessionStorage on any change
+  useEffect(() => {
+    if (!isRestored) return; // Don't overwrite with empty initial state
+    const state = {
+      jdText,
+      zipFileName: zipFile?.name || zipFileName,
+      completed,
+      error,
+      stepsLog,
+      resultJdId,
+      activeStep,
+      candidatesProcessed,
+    };
+    sessionStorage.setItem("talentScout_autopilotState", JSON.stringify(state));
+  }, [jdText, zipFile, zipFileName, completed, error, stepsLog, resultJdId, activeStep, candidatesProcessed, isRestored]);
 
   // Auto-scroll log
   useEffect(() => {
@@ -59,12 +106,19 @@ export default function AutopilotPage() {
       setActiveStep(-1);
       return;
     }
-    const lastLog = stepsLog.join("\n").toLowerCase();
-    if (lastLog.includes("ranking") || lastLog.includes("shortlist ready")) setActiveStep(4);
-    else if (lastLog.includes("conversation")) setActiveStep(3);
-    else if (lastLog.includes("matching engine")) setActiveStep(2);
-    else if (lastLog.includes("processing resumes") || lastLog.includes("extracting")) setActiveStep(1);
-    else if (lastLog.includes("parsing job")) setActiveStep(0);
+    if (completed) {
+      setActiveStep(5);
+      return;
+    }
+    const fullLog = stepsLog.join("\n").toLowerCase();
+
+    // LangGraph streams the updated state AFTER a node completes it.
+    // Thus, if we see the completion text of Node N, we know the backend is actively working on Node N+1.
+    if (fullLog.includes("conversations complete")) setActiveStep(4);
+    else if (fullLog.includes("matching complete")) setActiveStep(3);
+    else if (fullLog.includes("embedded")) setActiveStep(2);
+    else if (fullLog.includes("jd parsed")) setActiveStep(1);
+    else setActiveStep(0);
   }, [stepsLog, running, completed]);
 
   function handleFileDrop(e: React.DragEvent) {
@@ -122,6 +176,7 @@ Compensation: INR 25-45 LPA`);
   function handleReset() {
     setJdText("");
     setZipFile(null);
+    setZipFileName("");
     setStepsLog([]);
     setError("");
     setCompleted(false);
@@ -129,6 +184,7 @@ Compensation: INR 25-45 LPA`);
     setCandidatesProcessed(0);
     setActiveStep(-1);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    sessionStorage.removeItem("talentScout_autopilotState");
   }
 
   async function handleRun() {
@@ -139,28 +195,39 @@ Compensation: INR 25-45 LPA`);
     setStepsLog(["🚀 Initializing multi-agent pipeline..."]);
     setActiveStep(0);
 
-    // Simulate progressive log messages while the real request runs
-    const progressMessages = [
-      { delay: 2000, msg: "🔍 Agent 1 (JD Parser) is analyzing the job description..." },
-      { delay: 6000, msg: "📄 Agent 2 (Resume Processor) is extracting candidate profiles..." },
-      { delay: 15000, msg: "🎯 Agent 3 (Matching Engine) is computing match scores..." },
-      { delay: 25000, msg: "💬 Agent 4 (Conversation Agent) is engaging candidates..." },
-      { delay: 45000, msg: "🏆 Agent 5 (Ranking Engine) is building the final shortlist..." },
-    ];
+    const runId = crypto.randomUUID();
 
-    const timers = progressMessages.map(({ delay, msg }) =>
-      setTimeout(() => {
-        setStepsLog((prev) => [...prev, msg]);
-      }, delay)
-    );
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
 
     try {
-      const result = await runAutopilot(jdText, zipFile);
+      const wsUrl = `${API_URL.replace(/^http/, "ws")}/api/autopilot/ws/${runId}`;
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
 
-      // Clear progress timers
-      timers.forEach(clearTimeout);
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "state_update") {
+            if (data.steps_log) setStepsLog(data.steps_log);
+            if (data.candidates_processed !== undefined) setCandidatesProcessed(data.candidates_processed);
+            if (data.error) setError(data.error);
+          }
+        } catch (e) { }
+      };
+    } catch (e) {
+      console.error("WebSocket connection failed:", e);
+    }
 
-      // Replace with actual logs
+    try {
+      const result = await runAutopilot(jdText, zipFile, runId);
+
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+
+      // Replace with actual logs from the finalized state
       setStepsLog(result.steps_log);
       setResultJdId(result.jd_id);
       setCandidatesProcessed(result.candidates_processed);
@@ -172,7 +239,7 @@ Compensation: INR 25-45 LPA`);
         setActiveStep(5); // all done
       }
     } catch (err: unknown) {
-      timers.forEach(clearTimeout);
+      if (wsRef.current) wsRef.current.close();
       setError(err instanceof Error ? err.message : "An unexpected error occurred.");
     } finally {
       setRunning(false);
@@ -227,10 +294,10 @@ Compensation: INR 25-45 LPA`);
               <div key={idx} className="flex flex-col items-center gap-2 relative z-10">
                 <div
                   className={`p-3 rounded-xl border-2 transition-all duration-500 ${isDone
-                      ? "bg-green-50 border-green-400 text-green-600 dark:bg-green-950 dark:border-green-600 dark:text-green-400 scale-100"
-                      : isActive
-                        ? "bg-violet-50 border-violet-400 text-violet-600 dark:bg-violet-950 dark:border-violet-500 dark:text-violet-400 scale-110 shadow-lg shadow-violet-500/20 animate-pulse"
-                        : "bg-gray-50 border-gray-200 text-gray-400 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-500"
+                    ? "bg-green-50 border-green-400 text-green-600 dark:bg-green-950 dark:border-green-600 dark:text-green-400 scale-100"
+                    : isActive
+                      ? "bg-violet-50 border-violet-400 text-violet-600 dark:bg-violet-950 dark:border-violet-500 dark:text-violet-400 scale-110 shadow-lg shadow-violet-500/20 animate-pulse"
+                      : "bg-gray-50 border-gray-200 text-gray-400 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-500"
                     }`}
                 >
                   {isDone ? (
@@ -243,10 +310,10 @@ Compensation: INR 25-45 LPA`);
                 </div>
                 <span
                   className={`text-xs font-medium text-center transition-colors ${isDone
-                      ? "text-green-600 dark:text-green-400"
-                      : isActive
-                        ? "text-violet-600 dark:text-violet-400"
-                        : "text-gray-400 dark:text-neutral-500"
+                    ? "text-green-600 dark:text-green-400"
+                    : isActive
+                      ? "text-violet-600 dark:text-violet-400"
+                      : "text-gray-400 dark:text-neutral-500"
                     }`}
                 >
                   {step.label}
@@ -274,7 +341,7 @@ Compensation: INR 25-45 LPA`);
               )}
               {loadingSample ? "Loading..." : "Load Sample Data (JD + 12 Resumes)"}
             </button>
-            {(jdText || zipFile) && (
+            {(jdText || zipFile || zipFileName || stepsLog.length > 0) && (
               <button
                 onClick={handleReset}
                 disabled={running}
@@ -286,7 +353,7 @@ Compensation: INR 25-45 LPA`);
             )}
           </div>
           <p className="text-xs text-gray-400 dark:text-neutral-500 -mt-3 ml-1">
-            ↑ Note: Use this to quickly test the flow with sample data. You can ignore it and upload your own JD &amp; resumes below.
+            Note: Use 'Load Sample Data' button to test the flow with sample data. It takes around 5-7 minutes to complete the whole process for the sample data. You can ignore it and upload your own JD &amp; resumes below.
           </p>
 
           {/* JD Input */}
@@ -316,9 +383,9 @@ Compensation: INR 25-45 LPA`);
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleFileDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${zipFile
-                  ? "border-green-400 bg-green-50 dark:bg-green-950/30 dark:border-green-600"
-                  : "border-gray-300 dark:border-neutral-600 hover:border-violet-400 hover:bg-violet-50/50 dark:hover:bg-violet-950/20"
+              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${(zipFile || zipFileName)
+                ? "border-green-400 bg-green-50 dark:bg-green-950/30 dark:border-green-600"
+                : "border-gray-300 dark:border-neutral-600 hover:border-violet-400 hover:bg-violet-50/50 dark:hover:bg-violet-950/20"
                 } ${running ? "opacity-50 pointer-events-none" : ""}`}
             >
               <input
@@ -332,14 +399,14 @@ Compensation: INR 25-45 LPA`);
                 }}
                 disabled={running}
               />
-              {zipFile ? (
+              {zipFile || zipFileName ? (
                 <div className="flex flex-col items-center gap-2">
                   <CheckCircle2 className="h-8 w-8 text-green-500" />
                   <span className="text-sm font-medium text-green-700 dark:text-green-400">
-                    {zipFile.name}
+                    {zipFile ? zipFile.name : zipFileName}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {(zipFile.size / 1024).toFixed(1)} KB — Click to change
+                    {zipFile ? `${(zipFile.size / 1024).toFixed(1)} KB` : "Session Restored File"} — Click to change
                   </span>
                 </div>
               ) : (
@@ -406,14 +473,14 @@ Compensation: INR 25-45 LPA`);
                   <div
                     key={i}
                     className={`py-0.5 ${line.startsWith("❌")
-                        ? "text-red-400"
-                        : line.startsWith("⚠️")
-                          ? "text-yellow-400"
-                          : line.startsWith("✅")
-                            ? "text-green-400"
-                            : line.includes("🚀")
-                              ? "text-violet-400"
-                              : "text-neutral-300"
+                      ? "text-red-400"
+                      : line.startsWith("⚠️")
+                        ? "text-yellow-400"
+                        : line.startsWith("✅")
+                          ? "text-green-400"
+                          : line.includes("🚀")
+                            ? "text-violet-400"
+                            : "text-neutral-300"
                       }`}
                   >
                     {line}

@@ -4,10 +4,12 @@ import os
 import tempfile
 import zipfile
 from pathlib import Path
-from fastapi import APIRouter, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, File, Form, UploadFile, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, FileResponse
+import asyncio
 
 from app.services.orchestrator import run_full_pipeline
+from app.services.ws_manager import manager
 
 router = APIRouter()
 
@@ -32,11 +34,21 @@ async def download_sample_zip():
 
     return FileResponse(zip_path, filename="sample_resumes.zip", media_type="application/zip")
 
+@router.websocket("/ws/{run_id}")
+async def websocket_endpoint(websocket: WebSocket, run_id: str):
+    await manager.connect(run_id, websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(run_id)
+
 
 @router.post("/run")
 async def run_autopilot(
     jd_text: str = Form(...),
     resumes_zip: UploadFile = File(...),
+    run_id: str = Form(None),
 ):
     """
     Accepts a JD (plain text) and a ZIP of resume PDFs/DOCXs.
@@ -62,7 +74,7 @@ async def run_autopilot(
         print(f"[Autopilot] Saved ZIP: {zip_path} ({len(content)} bytes, original: {resumes_zip.filename})")
 
         # Run the full multi-agent pipeline
-        final_state = await run_full_pipeline(jd_text.strip(), zip_path)
+        final_state = await run_full_pipeline(jd_text.strip(), zip_path, run_id)
 
         return JSONResponse(content={
             "status": "completed" if not final_state.get("error") else "error",

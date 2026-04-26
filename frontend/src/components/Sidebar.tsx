@@ -15,6 +15,7 @@ import {
   Sun,
   Moon,
   Heart,
+  Info,
 } from "lucide-react";
 
 const nav = [
@@ -75,7 +76,13 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="p-4 mt-auto">
+      <div className="p-4 mt-auto flex flex-col gap-3">
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl flex gap-2.5 items-start shadow-sm">
+          <Info className="h-4 w-4 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-xs font-bold text-amber-800 dark:text-amber-300 leading-snug">
+            If AI gets stuck at any step, use the 'Clear Database' button on the Dashboard and retry.
+          </p>
+        </div>
         <div className="relative overflow-hidden bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/80 dark:from-indigo-950/30 dark:via-neutral-900 dark:to-violet-950/30 border border-indigo-100/50 dark:border-indigo-500/10 rounded-2xl p-4 flex flex-col gap-4 shadow-sm">
           {/* Subtle background glow */}
           <div className="absolute -top-4 -right-4 w-24 h-24 bg-violet-400/20 dark:bg-violet-600/10 rounded-full blur-xl pointer-events-none" />
@@ -95,7 +102,7 @@ export default function Sidebar() {
             </button>
           )}
 
-          <div className="z-10 flex flex-col items-center justify-center pt-1 pb-0.5">
+          <div className="z-10 flex flex-col items-center justify-center pt-1">
             <span className="text-[11px] font-bold text-gray-600 dark:text-neutral-400 flex items-center gap-1 cursor-default">
               Built By
               <a
@@ -107,7 +114,7 @@ export default function Sidebar() {
                 Vikash Kumar
               </a>
               With
-              <span className="animate-pulse inline-block text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)] scale-110 ml-0.5">❤️</span>
+              <span className="animate-pulse inline-flex mt-0.5 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)] text-[13px] ml-0.5 mb-1">❤️</span>
             </span>
           </div>
         </div>

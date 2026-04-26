@@ -230,10 +230,13 @@ export async function getShortlist(jdId: number, matchWeight: number = 0.6) {
 
 // --- Autopilot (Multi-Agent Pipeline) ---
 
-export async function runAutopilot(jdText: string, resumesZip: File) {
+export async function runAutopilot(jdText: string, resumesZip: File, runId?: string) {
   const formData = new FormData();
   formData.append("jd_text", jdText);
   formData.append("resumes_zip", resumesZip);
+  if (runId) {
+    formData.append("run_id", runId);
+  }
 
   const res = await fetch(`${API_URL}/api/autopilot/run`, {
     method: "POST",

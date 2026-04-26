@@ -461,8 +461,10 @@ def build_pipeline():
 pipeline = build_pipeline()
 
 
-async def run_full_pipeline(raw_jd_text: str, zip_path: str) -> PipelineState:
-    """Execute the full multi-agent pipeline end-to-end."""
+async def run_full_pipeline(raw_jd_text: str, zip_path: str, run_id: Optional[str] = None) -> PipelineState:
+    """Execute the full multi-agent pipeline end-to-end with real-time websocket updates."""
+    from app.services.ws_manager import manager
+    
     initial_state: PipelineState = {
         "raw_jd_text": raw_jd_text,
         "zip_path": zip_path,
@@ -477,6 +479,27 @@ async def run_full_pipeline(raw_jd_text: str, zip_path: str) -> PipelineState:
         "error": "",
     }
 
-    # 6 nodes total, each runs once = 6 steps, well within default limits
-    final_state = await pipeline.ainvoke(initial_state, config={"recursion_limit": 50})
+    final_state = initial_state
+
+    # Optional: Initial WS ping
+    if run_id:
+        await manager.send_json({
+            "type": "state_update", 
+            "steps_log": final_state["steps_log"],
+            "candidates_processed": 0,
+            "error": ""
+        }, run_id)
+
+    # Stream the full state after each node completes
+    async for state_event in pipeline.astream(initial_state, stream_mode="values", config={"recursion_limit": 50}):
+        final_state = state_event
+
+        if run_id:
+            await manager.send_json({
+                "type": "state_update",
+                "steps_log": final_state.get("steps_log", []),
+                "candidates_processed": len(final_state.get("candidate_ids", [])),
+                "error": final_state.get("error", ""),
+            }, run_id)
+
     return final_state

@@ -129,9 +129,20 @@ async def get_candidate(candidate_id: int, session: AsyncSession = Depends(get_s
 
 @router.delete("/clear")
 async def clear_candidates(session: AsyncSession = Depends(get_session)):
+    # Cascade: delete all related matches and conversations
+    await session.execute(delete(MatchResult))
+    await session.execute(delete(Conversation))
+
+    # Remove all embeddings from ChromaDB
+    try:
+        collection = get_or_create_collection("resumes")
+        collection.delete(where={})
+    except Exception:
+        pass
+
     await session.execute(delete(Candidate))
     await session.commit()
-    return {"message": "All candidates cleared"}
+    return {"message": "All candidates and related data cleared"}
 
 
 @router.delete("/{candidate_id}")

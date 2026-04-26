@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { listJDs, getShortlist } from "@/lib/api";
-import { ListOrdered, Download, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
+import { ListOrdered, Download, ChevronDown, ChevronUp, ArrowLeft, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 type ShortlistItem = {
@@ -35,9 +35,30 @@ export default function ShortlistPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    listJDs().then((data) => {
+    listJDs().then(async (data) => {
       setJds(data);
-      if (data.length > 0) setSelectedJd(data[0].id);
+      if (data.length > 0) {
+        const firstId = data[0].id;
+        setSelectedJd(firstId);
+        
+        // Auto-load the shortlist for the first JD
+        setLoading(true);
+        try {
+          const res = await getShortlist(firstId, 0.6); // Default starting match weight
+          setShortlist(res.shortlist);
+          setJdTitle(res.jd_title);
+          if (res.shortlist.length > 0) {
+            setExpandedId(res.shortlist[0].candidate_id);
+          } else {
+            setExpandedId(null);
+          }
+        } catch {
+          setShortlist([]);
+          setExpandedId(null);
+        } finally {
+          setLoading(false);
+        }
+      }
     }).catch(() => {});
   }, []);
 
@@ -48,8 +69,14 @@ export default function ShortlistPage() {
       const data = await getShortlist(selectedJd, matchWeight);
       setShortlist(data.shortlist);
       setJdTitle(data.jd_title);
+      if (data.shortlist.length > 0) {
+        setExpandedId(data.shortlist[0].candidate_id);
+      } else {
+        setExpandedId(null);
+      }
     } catch {
       setShortlist([]);
+      setExpandedId(null);
     } finally {
       setLoading(false);
     }
@@ -108,9 +135,19 @@ export default function ShortlistPage() {
         <button
           onClick={handleLoad}
           disabled={!selectedJd || loading}
-          className="px-5 py-2 bg-rose-600 text-white rounded-lg font-medium text-sm hover:bg-rose-700 disabled:opacity-50"
+          className="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 flex items-center gap-2 cursor-pointer"
         >
-          {loading ? "Loading..." : "Load Shortlist"}
+          {loading ? (
+            <>
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              Loading...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              Load Shortlist
+            </>
+          )}
         </button>
         {shortlist.length > 0 && (
           <button

@@ -24,7 +24,7 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 shrink-0 bg-white dark:bg-neutral-900 border-r border-gray-200 dark:border-neutral-800 flex flex-col">
+    <aside className="w-64 shrink-0 bg-white dark:bg-neutral-900 border-r border-gray-200 dark:border-neutral-800 flex flex-col h-full">
       <div className="p-5 border-b border-gray-200 dark:border-neutral-800">
         <Link href="/" className="flex items-center gap-2">
           <BrainCircuit className="h-7 w-7 text-indigo-600" />

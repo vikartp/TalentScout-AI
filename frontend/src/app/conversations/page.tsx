@@ -91,7 +91,7 @@ export default function ConversationsPage() {
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 sticky top-0 z-20 bg-white dark:bg-neutral-950 py-4 pr-8 -mx-8">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <MessageSquare className="h-6 w-6 text-orange-600" />
           Conversational Outreach
@@ -123,7 +123,7 @@ export default function ConversationsPage() {
       </div>
 
       {/* JD Selector */}
-      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-4 mb-6">
+      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-4 mb-6 sticky top-16 z-10 -mx-8">
         <select
           className="w-full p-2 border border-gray-300 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-800 text-sm text-gray-900 dark:text-white outline-none"
           value={selectedJd ?? ""}

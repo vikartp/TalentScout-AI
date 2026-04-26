@@ -69,7 +69,7 @@ export default function Home() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <div className="mb-10 flex items-start justify-between">
+      <div className="mb-10 flex items-start justify-between sticky top-0 z-20 bg-white dark:bg-neutral-950 py-4 pr-8 -mx-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             TalentScout AI

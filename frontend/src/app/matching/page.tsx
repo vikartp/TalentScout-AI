@@ -78,7 +78,7 @@ export default function MatchingPage() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 sticky top-0 z-20 bg-white dark:bg-neutral-950 py-4 pr-8 -mx-8">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <GitCompareArrows className="h-6 w-6 text-purple-600" />
           Candidate Matching
@@ -108,7 +108,7 @@ export default function MatchingPage() {
       </div>
 
       {/* JD Selector */}
-      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-6 mb-8">
+      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-6 mb-8 sticky top-16 z-10 -mx-8">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Select Job Description
         </label>

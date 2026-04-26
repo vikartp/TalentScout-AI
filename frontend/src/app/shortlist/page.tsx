@@ -66,14 +66,16 @@ export default function ShortlistPage() {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-        <ListOrdered className="h-6 w-6 text-rose-600" />
-        Ranked Shortlist
-      </h1>
+    <div className="p-8 max-w-4xl mx-auto">
+      <div className="flex items-center justify-between mb-6 sticky top-0 z-20 bg-white dark:bg-neutral-950 py-4 pr-8 -mx-8">
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white">
+          <ListOrdered className="h-6 w-6 text-rose-600" />
+          Ranked Shortlist
+        </h1>
+      </div>
 
       {/* Controls */}
-      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-4 mb-6 flex flex-wrap items-end gap-4">
+      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-4 mb-6 flex flex-wrap items-end gap-4 sticky top-16 z-10 -mx-8">
         <div className="flex-1 min-w-[200px]">
           <label className="block text-xs font-medium text-gray-500 mb-1">Job Description</label>
           <select
@@ -202,3 +204,4 @@ export default function ShortlistPage() {
     </div>
   );
 }
+

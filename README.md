@@ -108,7 +108,7 @@ cp frontend/.env.example frontend/.env.local
 ```bash
 cd backend
 uv sync
-uv run uvicorn app.main:app --reload --port 8000
+uv run python -m uvicorn app.main:app --reload --port 8000
 ```
 
 API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
@@ -568,3 +568,4 @@ TalentScout-AI/
 | Docker build fails | Run `docker compose down -v` to clean up, then `docker compose up --build` |
 | Theme toggle not working | Ensure `next-themes` is installed and `ThemeProvider` wraps the layout |
 | Autopilot state lost on page navigation | State is cached in `sessionStorage`. It persists across tab switches but resets on browser close |
+| `uv` trampoline / canonicalization error | Run using `uv run python -m uvicorn app.main:app --reload --port 8000` instead |

@@ -10,7 +10,7 @@ FastAPI backend powering JD parsing, resume processing, candidate matching, conv
 cd backend
 cp .env.example .env   # then edit with your API keys
 uv sync
-uv run uvicorn app.main:app --reload --port 8000
+uv run python -m uvicorn app.main:app --reload --port 8000
 ```
 
 API docs: [http://localhost:8000/docs](http://localhost:8000/docs)

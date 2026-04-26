@@ -13,8 +13,11 @@ from app.services.ws_manager import manager
 
 router = APIRouter()
 
-# Path to sample resumes
-SAMPLE_RESUMES_DIR = Path(__file__).resolve().parent.parent.parent.parent / "sample-data" / "resumes"
+# Path to sample resumes — check both local dev and Docker container locations
+LOCAL_PATH = Path(__file__).resolve().parent.parent.parent.parent / "sample-data" / "resumes"
+DOCKER_PATH = Path("/app/sample-data/resumes")
+
+SAMPLE_RESUMES_DIR = DOCKER_PATH if DOCKER_PATH.exists() else LOCAL_PATH
 
 
 @router.get("/sample-zip")

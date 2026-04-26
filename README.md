@@ -10,158 +10,21 @@ Powered by a **LangGraph multi-agent orchestrator** with real-time **WebSocket p
 
 ## 📑 Table of Contents
 
-- [Features](#-features)
-- [Architecture](#-architecture)
-- [Multi-Agent Pipeline (LangGraph)](#-multi-agent-pipeline-langgraph)
-- [Tech Stack](#-tech-stack)
 - [Docker Quick Start](#-docker-quick-start-recommended)
 - [Local Development Setup](#-local-development-setup)
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Scoring System](#-scoring-system)
+- [Sample Data & Outputs](#-sample-data--outputs)
+- [Multi-Agent Pipeline (LangGraph)](#-multi-agent-pipeline-langgraph)
+- [Tech Stack](#-tech-stack)
 - [Project Structure](#-project-structure)
 - [Backend Services](#-backend-services)
 - [API Reference](#-api-reference)
 - [Frontend Pages](#-frontend-pages)
 - [Data Models](#-data-models)
-- [Scoring System](#-scoring-system)
-- [Sample Data & Outputs](#-sample-data--outputs)
 - [Environment Variables](#-environment-variables)
 - [Troubleshooting](#-troubleshooting)
-
----
-
-## ✨ Features
-
-- **Autopilot Mode** — One-click: upload a JD + resume ZIP → 5 AI agents handle everything automatically
-- **Real-Time WebSocket Streaming** — Live agent progress streamed via WebSocket to the browser as LangGraph nodes execute
-- **Multi-Agent Orchestration** — LangGraph-powered sequential pipeline with typed shared state and error-aware short-circuiting
-- **4-Signal Match Scoring** — Semantic similarity (40%), skill match (30%), experience fit (15%), education match (15%)
-- **AI Conversation Simulation** — Dual-persona LLM prompting simulates realistic recruiter-candidate outreach
-- **Interest Scoring** — Enthusiasm, availability, salary alignment, cultural fit — scored from conversation transcripts
-- **Session Persistence** — Autopilot state cached in `sessionStorage` so users don't lose progress when navigating
-- **Dark/Light Theme** — Toggle between dark and light mode (dark by default) via `next-themes`
-- **Sample Data Pack** — One-click button loads a pre-packaged JD + 12 sample resumes for instant testing
-- **Manual Workflow** — Every pipeline stage (JD parse, resume upload, matching, conversations, shortlist) is also available as individual pages
-- **Docker Ready** — Full `docker compose` setup for instant deployment
-
----
-
-## 🏗 Architecture
-
-```mermaid
-flowchart TB
-    subgraph Frontend["Frontend (Next.js)"]
-        UI[React UI]
-        WS[WebSocket Client]
-    end
-
-    subgraph Backend["Backend (FastAPI)"]
-        API[REST API]
-        WSS[WebSocket Server]
-        subgraph Orchestrator["LangGraph Orchestrator"]
-            SUP[Supervisor Node]
-            JDP[JD Parser Agent]
-            RP[Resume Processor Agent]
-            ME[Matching Agent]
-            CA[Conversation Agent]
-            RE[Shortlist Agent]
-        end
-    end
-
-    subgraph AI["AI Services (OpenAI-compatible)"]
-        LLM["LLM (gpt-4o)"]
-        EMB["Embeddings (text-embedding-3-large)"]
-    end
-
-    subgraph Storage["Storage"]
-        SQL[(SQLite)]
-        VEC[(ChromaDB)]
-    end
-
-    UI -->|HTTP| API
-    WS <-->|WebSocket| WSS
-    API --> Orchestrator
-
-    SUP --> JDP --> RP --> ME --> CA --> RE
-
-    JDP -->|Parse & structure| LLM
-    RP -->|Extract profile| LLM
-    RP -->|Generate embedding| EMB
-    RP -->|Store embedding| VEC
-    ME -->|Semantic similarity| VEC
-    ME -->|Match explanation| LLM
-    CA -->|Multi-turn conversation| LLM
-    CA -->|Score interest| LLM
-
-    JDP -->|Store parsed JD| SQL
-    RP -->|Store profile| SQL
-    ME -->|Store results| SQL
-    CA -->|Store transcript| SQL
-    RE -->|Read scores| SQL
-```
-
-### Data Flow
-
-```
-JD Text ─► AI Parse ─► Structured JD (title, skills, experience, education)
-                                │
-Resume PDFs ─► AI Extract ─► Candidate Profiles + Embeddings
-                                │
-                    ┌───────────┴───────────┐
-                    ▼                       ▼
-             Match Engine              Conversation Agent
-          (4-signal scoring)          (4-turn simulation)
-                    │                       │
-                    ▼                       ▼
-              Match Score              Interest Score
-                    │                       │
-                    └───────────┬───────────┘
-                                ▼
-                         Ranking Engine
-                    Final Score → Shortlist
-```
-
----
-
-## 🤖 Multi-Agent Pipeline (LangGraph)
-
-The Autopilot mode uses a **LangGraph StateGraph** with 6 sequential nodes sharing a typed `PipelineState`:
-
-```mermaid
-flowchart LR
-    SUP["🧠 Supervisor"] --> JDP["🔍 JD Parser"]
-    JDP --> RP["📄 Resume Processor"]
-    RP --> ME["🎯 Matching Engine"]
-    ME --> CA["💬 Conversation Agent"]
-    CA --> RE["🏆 Shortlist Ranker"]
-    RE --> END["✅ END"]
-```
-
-| Node | Agent | Responsibility |
-|------|-------|---------------|
-| 1 | **Supervisor** | Initializes pipeline, dispatches to specialists |
-| 2 | **JD Parser** | LLM-powered extraction of structured requirements from raw JD text |
-| 3 | **Resume Processor** | Extracts text from ZIP → LLM parsing → ChromaDB embedding per candidate |
-| 4 | **Matching Engine** | 4-signal scoring per candidate against the JD |
-| 5 | **Conversation Agent** | Simulates 4-turn recruiter-candidate conversations, scores interest |
-| 6 | **Shortlist Ranker** | Combines Match + Interest scores → ranked output |
-
-**Real-Time Streaming:** The orchestrator uses `pipeline.astream(stream_mode="values")` to push state updates via WebSocket after each node completes. The frontend receives live logs and progress updates without polling.
-
----
-
-## 🛠 Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS v4 |
-| Backend | FastAPI, Python 3.12, uvicorn |
-| AI / LLM | OpenAI SDK (gpt-4o + text-embedding-3-large) |
-| Orchestration | LangGraph (StateGraph, sequential multi-agent pipeline) |
-| Real-Time | WebSocket (FastAPI native + JS native WebSocket) |
-| Database | SQLite (async via SQLModel + aiosqlite) |
-| Vector Store | ChromaDB (persistent) |
-| Theme | next-themes (dark/light toggle) |
-| Icons | Lucide React |
-| Containerization | Docker, Docker Compose |
 
 ---
 
@@ -258,6 +121,242 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+---
+
+## ✨ Features
+
+- **Autopilot Mode** — One-click: upload a JD + resume ZIP → 5 AI agents handle everything automatically
+- **Real-Time WebSocket Streaming** — Live agent progress streamed via WebSocket to the browser as LangGraph nodes execute
+- **Multi-Agent Orchestration** — LangGraph-powered sequential pipeline with typed shared state and error-aware short-circuiting
+- **4-Signal Match Scoring** — Semantic similarity (40%), skill match (30%), experience fit (15%), education match (15%)
+- **AI Conversation Simulation** — Dual-persona LLM prompting simulates realistic recruiter-candidate outreach
+- **Interest Scoring** — Enthusiasm, availability, salary alignment, cultural fit — scored from conversation transcripts
+- **Session Persistence** — Autopilot state cached in `sessionStorage` so users don't lose progress when navigating
+- **Dark/Light Theme** — Toggle between dark and light mode (dark by default) via `next-themes`
+- **Sample Data Pack** — One-click button loads a pre-packaged JD + 12 sample resumes for instant testing
+- **Manual Workflow** — Every pipeline stage (JD parse, resume upload, matching, conversations, shortlist) is also available as individual pages
+- **Docker Ready** — Full `docker compose` setup for instant deployment
+
+---
+
+## 🏗 Architecture
+
+```mermaid
+flowchart TB
+    subgraph Frontend["Frontend (Next.js)"]
+        UI[React UI]
+        WS[WebSocket Client]
+    end
+
+    subgraph Backend["Backend (FastAPI)"]
+        API[REST API]
+        WSS[WebSocket Server]
+        subgraph Orchestrator["LangGraph Orchestrator"]
+            SUP[Supervisor Node]
+            JDP[JD Parser Agent]
+            RP[Resume Processor Agent]
+            ME[Matching Agent]
+            CA[Conversation Agent]
+            RE[Shortlist Agent]
+        end
+    end
+
+    subgraph AI["AI Services (OpenAI-compatible)"]
+        LLM["LLM (gpt-4o)"]
+        EMB["Embeddings (text-embedding-3-large)"]
+    end
+
+    subgraph Storage["Storage"]
+        SQL[(SQLite)]
+        VEC[(ChromaDB)]
+    end
+
+    UI -->|HTTP| API
+    WS <-->|WebSocket| WSS
+    API --> Orchestrator
+
+    SUP --> JDP --> RP --> ME --> CA --> RE
+
+    JDP -->|Parse & structure| LLM
+    RP -->|Extract profile| LLM
+    RP -->|Generate embedding| EMB
+    RP -->|Store embedding| VEC
+    ME -->|Semantic similarity| VEC
+    ME -->|Match explanation| LLM
+    CA -->|Multi-turn conversation| LLM
+    CA -->|Score interest| LLM
+
+    JDP -->|Store parsed JD| SQL
+    RP -->|Store profile| SQL
+    ME -->|Store results| SQL
+    CA -->|Store transcript| SQL
+    RE -->|Read scores| SQL
+```
+
+### Data Flow
+
+```
+JD Text ─► AI Parse ─► Structured JD (title, skills, experience, education)
+                                │
+Resume PDFs ─► AI Extract ─► Candidate Profiles + Embeddings
+                                │
+                    ┌───────────┴───────────┐
+                    ▼                       ▼
+             Match Engine              Conversation Agent
+          (4-signal scoring)          (4-turn simulation)
+                    │                       │
+                    ▼                       ▼
+              Match Score              Interest Score
+                    │                       │
+                    └───────────┬───────────┘
+                                ▼
+                         Ranking Engine
+                    Final Score → Shortlist
+```
+
+---
+
+## 📈 Scoring System
+
+TalentScout uses a **two-stage scoring pipeline**: a deterministic **Match Score** and an AI-generated **Interest Score**.
+
+### Match Score (0–100) — 4 Weighted Signals
+
+| Signal | Weight | Method |
+|--------|--------|--------|
+| **Semantic Similarity** | 40% | Cosine similarity of JD & resume embeddings (`text-embedding-3-large`) |
+| **Skill Match** | 30% | Fuzzy matching; must-have skills weighted 2× vs nice-to-have |
+| **Experience Fit** | 15% | Gaussian penalty around JD's ideal range (σ=3 years) |
+| **Education Match** | 15% | Ordinal degree comparison (5-level scale) |
+
+**Formula:**
+```
+Match Score = (0.40 × Semantic + 0.30 × Skill + 0.15 × Experience + 0.15 × Education) × 100
+```
+
+#### Signal Details
+
+- **Semantic Similarity (40%)** — Both JD and resume text are embedded via `text-embedding-3-large`. Cosine similarity captures domain/role alignment beyond keyword matching.
+- **Skill Match (30%)** — Fuzzy substring matching with delimiter splitting (`/`, `,`, `&`). Must-have weighted **2×**: `Score = (matched_must × 2 + matched_nice) / (total_must × 2 + total_nice)`
+- **Experience Fit (15%)** — Gaussian decay: `Score = exp(-0.5 × (distance / 3)²)`. Within range → 1.0, unknown → 0.5.
+- **Education Match (15%)** — Ordinal scale (HS=1, Associate=2, Bachelor=3, Master=4, PhD=5). Meets/exceeds → 1.0, one below → 0.7, two+ → 0.4.
+
+### Interest Score (0–100) — From AI Conversations
+
+Generated from **4-turn simulated recruiter-candidate conversations** using dual-persona LLM prompting, then evaluated by a separate LLM scorer.
+
+| Dimension | Weight | What it Measures |
+|-----------|--------|-----------------|
+| **Enthusiasm** | 30% | How excited/interested is the candidate? |
+| **Availability** | 25% | How soon can they start/interview? |
+| **Salary Alignment** | 25% | How aligned are compensation expectations? |
+| **Cultural Fit** | 20% | Values and motivation alignment with role |
+
+**Formula:**
+```
+Interest Score = (0.30 × Enthusiasm + 0.25 × Availability + 0.25 × Salary + 0.20 × Cultural) × 10
+```
+
+### Final Ranking
+
+```
+Final Score = 0.6 × Match Score + 0.4 × Interest Score
+```
+
+> **Rationale:** Match Score is weighted higher because technical fit is a prerequisite. The 60/40 split still gives meaningful weight to interest, reflecting that engaged candidates are more likely to accept and succeed. The weight is configurable via the UI slider.
+
+---
+
+## 🧪 Sample Data & Outputs
+
+### Included Sample Data
+
+The [`sample-data/`](sample-data/) directory contains ready-to-use test data:
+
+| File | Description |
+|------|-------------|
+| `jds/jd-senior-fullstack.txt` | Senior Full-Stack Developer JD |
+| `jds/jd-data-scientist.txt` | Data Scientist — Machine Learning JD |
+| `jds/jd-devops-engineer.txt` | DevOps Engineer JD |
+| `resumes/` | 12 sample resume PDFs with diverse profiles |
+| `resume_data.py` | Raw resume data used to generate PDFs |
+| `generate_resumes.py` | Script to regenerate resume PDFs |
+
+### Example Shortlist Output
+
+| Rank | Candidate | Match Score | Interest Score | Final Score |
+|------|-----------|-------------|----------------|-------------|
+| 1 | Priya Sharma | 82.4 | 85.0 | 83.4 |
+| 2 | Rahul Mehta | 78.1 | 72.0 | 75.7 |
+| 3 | Ananya Iyer | 71.5 | 68.0 | 70.1 |
+
+### Detailed Score Breakdown (Top Candidate)
+
+```json
+{
+  "candidate": "Priya Sharma",
+  "semantic_score": 87.2,
+  "skill_score": 85.0,
+  "experience_score": 100.0,
+  "education_score": 100.0,
+  "match_score": 82.4,
+  "matched_skills": ["react.js", "node.js", "typescript", "postgresql", "rest apis", "docker"],
+  "missing_skills": [],
+  "interest_scores": {
+    "enthusiasm": 9,
+    "availability": 8,
+    "salary_alignment": 8,
+    "cultural_fit": 9,
+    "interest_score": 85.0
+  },
+  "final_score": 83.4
+}
+```
+
+---
+
+## 🤖 Multi-Agent Pipeline (LangGraph)
+
+The Autopilot mode uses a **LangGraph StateGraph** with 6 sequential nodes sharing a typed `PipelineState`:
+
+```mermaid
+flowchart LR
+    SUP["🧠 Supervisor"] --> JDP["🔍 JD Parser"]
+    JDP --> RP["📄 Resume Processor"]
+    RP --> ME["🎯 Matching Engine"]
+    ME --> CA["💬 Conversation Agent"]
+    CA --> RE["🏆 Shortlist Ranker"]
+    RE --> END["✅ END"]
+```
+
+| Node | Agent | Responsibility |
+|------|-------|---------------|
+| 1 | **Supervisor** | Initializes pipeline, dispatches to specialists |
+| 2 | **JD Parser** | LLM-powered extraction of structured requirements from raw JD text |
+| 3 | **Resume Processor** | Extracts text from ZIP → LLM parsing → ChromaDB embedding per candidate |
+| 4 | **Matching Engine** | 4-signal scoring per candidate against the JD |
+| 5 | **Conversation Agent** | Simulates 4-turn recruiter-candidate conversations, scores interest |
+| 6 | **Shortlist Ranker** | Combines Match + Interest scores → ranked output |
+
+**Real-Time Streaming:** The orchestrator uses `pipeline.astream(stream_mode="values")` to push state updates via WebSocket after each node completes. The frontend receives live logs and progress updates without polling.
+
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS v4 |
+| Backend | FastAPI, Python 3.12, uvicorn |
+| AI / LLM | OpenAI SDK (gpt-4o + text-embedding-3-large) |
+| Orchestration | LangGraph (StateGraph, sequential multi-agent pipeline) |
+| Real-Time | WebSocket (FastAPI native + JS native WebSocket) |
+| Database | SQLite (async via SQLModel + aiosqlite) |
+| Vector Store | ChromaDB (persistent) |
+| Theme | next-themes (dark/light toggle) |
+| Icons | Lucide React |
+| Containerization | Docker, Docker Compose |
 
 ---
 
@@ -435,127 +534,6 @@ TalentScout-AI/
 
 ### Conversation
 `id`, `jd_id`, `candidate_id`, `transcript`, `interest_score`, `enthusiasm`, `availability`, `salary_alignment`, `cultural_fit`, `score_explanation`, `status`, `created_at`
-
----
-
-## 📈 Scoring System
-
-TalentScout uses a **two-stage scoring pipeline**: a deterministic **Match Score** and an AI-generated **Interest Score**.
-
-### Match Score (0–100) — 4 Weighted Signals
-
-| Signal | Weight | Method |
-|--------|--------|--------|
-| **Semantic Similarity** | 40% | Cosine similarity of JD & resume embeddings (`text-embedding-3-large`) |
-| **Skill Match** | 30% | Fuzzy matching; must-have skills weighted 2× vs nice-to-have |
-| **Experience Fit** | 15% | Gaussian penalty around JD's ideal range (σ=3 years) |
-| **Education Match** | 15% | Ordinal degree comparison (5-level scale) |
-
-**Formula:**
-```
-Match Score = (0.40 × Semantic + 0.30 × Skill + 0.15 × Experience + 0.15 × Education) × 100
-```
-
-#### Signal Details
-
-- **Semantic Similarity (40%)** — Both JD and resume text are embedded via `text-embedding-3-large`. Cosine similarity captures domain/role alignment beyond keyword matching.
-- **Skill Match (30%)** — Fuzzy substring matching with delimiter splitting (`/`, `,`, `&`). Must-have weighted **2×**: `Score = (matched_must × 2 + matched_nice) / (total_must × 2 + total_nice)`
-- **Experience Fit (15%)** — Gaussian decay: `Score = exp(-0.5 × (distance / 3)²)`. Within range → 1.0, unknown → 0.5.
-- **Education Match (15%)** — Ordinal scale (HS=1, Associate=2, Bachelor=3, Master=4, PhD=5). Meets/exceeds → 1.0, one below → 0.7, two+ → 0.4.
-
-### Interest Score (0–100) — From AI Conversations
-
-Generated from **4-turn simulated recruiter-candidate conversations** using dual-persona LLM prompting, then evaluated by a separate LLM scorer.
-
-| Dimension | Weight | What it Measures |
-|-----------|--------|-----------------|
-| **Enthusiasm** | 30% | How excited/interested is the candidate? |
-| **Availability** | 25% | How soon can they start/interview? |
-| **Salary Alignment** | 25% | How aligned are compensation expectations? |
-| **Cultural Fit** | 20% | Values and motivation alignment with role |
-
-**Formula:**
-```
-Interest Score = (0.30 × Enthusiasm + 0.25 × Availability + 0.25 × Salary + 0.20 × Cultural) × 10
-```
-
-### Final Ranking
-
-```
-Final Score = 0.6 × Match Score + 0.4 × Interest Score
-```
-
-> **Rationale:** Match Score is weighted higher because technical fit is a prerequisite. The 60/40 split still gives meaningful weight to interest, reflecting that engaged candidates are more likely to accept and succeed. The weight is configurable via the UI slider.
-
----
-
-## 🧪 Sample Data & Outputs
-
-### Included Sample Data
-
-The [`sample-data/`](sample-data/) directory contains ready-to-use test data:
-
-| File | Description |
-|------|-------------|
-| `jds/jd-senior-fullstack.txt` | Senior Full-Stack Developer JD |
-| `jds/jd-data-scientist.txt` | Data Scientist — Machine Learning JD |
-| `jds/jd-devops-engineer.txt` | DevOps Engineer JD |
-| `resumes/` | 12 sample resume PDFs with diverse profiles |
-| `resume_data.py` | Raw resume data used to generate PDFs |
-| `generate_resumes.py` | Script to regenerate resume PDFs |
-
-### Example Shortlist Output
-
-| Rank | Candidate | Match Score | Interest Score | Final Score |
-|------|-----------|-------------|----------------|-------------|
-| 1 | Priya Sharma | 82.4 | 85.0 | 83.4 |
-| 2 | Rahul Mehta | 78.1 | 72.0 | 75.7 |
-| 3 | Ananya Iyer | 71.5 | 68.0 | 70.1 |
-
-### Detailed Score Breakdown (Top Candidate)
-
-```json
-{
-  "candidate": "Priya Sharma",
-  "semantic_score": 87.2,
-  "skill_score": 85.0,
-  "experience_score": 100.0,
-  "education_score": 100.0,
-  "match_score": 82.4,
-  "matched_skills": ["react.js", "node.js", "typescript", "postgresql", "rest apis", "docker"],
-  "missing_skills": [],
-  "interest_scores": {
-    "enthusiasm": 9,
-    "availability": 8,
-    "salary_alignment": 8,
-    "cultural_fit": 9,
-    "interest_score": 85.0
-  },
-  "final_score": 83.4
-}
-```
-
-### Sample Conversation Transcript
-
-```
-[RECRUITER]: Hi Priya! I came across your profile and was really impressed by your
-full-stack experience. We have a Senior Full-Stack Developer role at TechCorp that
-could be a great fit. Would you be open to hearing more?
-
-[CANDIDATE]: Hi! Thanks for reaching out. I'm always open to learning about new
-opportunities, especially involving React and Node.js. What does the team look like?
-
-[RECRUITER]: It's a cross-functional team of 8 engineers. You'd be leading feature
-development and mentoring junior devs. Hybrid in Bangalore, 3 days in office.
-
-[CANDIDATE]: That sounds exciting! The mentoring aspect is something I really enjoy.
-The hybrid setup works for me. What's the timeline and compensation?
-
-[RECRUITER]: 4-6 weeks timeline, 3-round interview. Compensation: 25-40 LPA.
-
-[CANDIDATE]: That works — I'd need about a month's notice. The range sounds good.
-I'd love to move forward with the process!
-```
 
 ---
 

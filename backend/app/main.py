@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel
 
-from app.api import jd, candidates, matching, conversations, shortlist
+from app.api import jd, candidates, matching, conversations, shortlist, autopilot
 from app.db.database import create_db_and_tables, engine
 from app.db.vector_store import get_or_create_collection
 
@@ -25,6 +25,7 @@ app.include_router(candidates.router, prefix="/api/candidates", tags=["Candidate
 app.include_router(matching.router, prefix="/api/matching", tags=["Matching"])
 app.include_router(conversations.router, prefix="/api/conversations", tags=["Conversations"])
 app.include_router(shortlist.router, prefix="/api/shortlist", tags=["Shortlist"])
+app.include_router(autopilot.router, prefix="/api/autopilot", tags=["Autopilot"])
 
 
 @app.on_event("startup")

@@ -10,6 +10,8 @@ import {
   ListOrdered,
   ArrowRight,
   Trash2,
+  Zap,
+  Sparkles,
 } from "lucide-react";
 import { resetDatabase } from "@/lib/api";
 
@@ -89,6 +91,39 @@ export default function Home() {
         </button>
       </div>
 
+      {/* Autopilot Banner */}
+      <Link
+        href="/autopilot"
+        className="block mb-8 p-[2px] rounded-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 hover:shadow-xl hover:shadow-violet-500/20 transition-all group"
+      >
+        <div className="flex items-center gap-5 p-5 bg-white dark:bg-neutral-900 rounded-[14px]">
+          <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/30">
+            <Zap className="h-7 w-7" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-0.5">
+              <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                Autopilot Mode
+              </h3>
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white uppercase tracking-wider">
+                Multi-Agent
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Upload a JD + resumes ZIP and let <span className="text-violet-600 dark:text-violet-400 font-medium">5 AI agents</span> handle everything — parse, match, engage, and rank automatically.
+            </p>
+          </div>
+          <div className="flex items-center gap-1 text-violet-500 group-hover:translate-x-1 transition-transform">
+            <Sparkles className="h-5 w-5" />
+            <ArrowRight className="h-5 w-5" />
+          </div>
+        </div>
+      </Link>
+
+      {/* Manual Workflow Steps */}
+      <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+        Or use the step-by-step workflow
+      </h2>
       <div className="space-y-4">
         {steps.map(({ icon: Icon, title, description, href, color }) => (
           <Link

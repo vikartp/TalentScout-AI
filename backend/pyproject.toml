@@ -19,4 +19,5 @@ dependencies = [
     "python-multipart>=0.0.18",
     "sqlmodel>=0.0.22",
     "aiosqlite>=0.20.0",
+    "langgraph>=1.1.9",
 ]

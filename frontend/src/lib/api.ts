@@ -227,3 +227,40 @@ export async function getShortlist(jdId: number, matchWeight: number = 0.6) {
     }[];
   }>(`/api/shortlist/${jdId}?match_weight=${matchWeight}`);
 }
+
+// --- Autopilot (Multi-Agent Pipeline) ---
+
+export async function runAutopilot(jdText: string, resumesZip: File) {
+  const formData = new FormData();
+  formData.append("jd_text", jdText);
+  formData.append("resumes_zip", resumesZip);
+
+  const res = await fetch(`${API_URL}/api/autopilot/run`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(error.detail || `Request failed: ${res.status}`);
+  }
+
+  return res.json() as Promise<{
+    status: string;
+    jd_id: number;
+    jd_parsed: Record<string, unknown>;
+    candidates_processed: number;
+    shortlist: {
+      candidate_id: number;
+      name: string;
+      current_role: string;
+      current_company: string;
+      experience_years: number;
+      match_score: number;
+      interest_score: number;
+      final_score: number;
+    }[];
+    steps_log: string[];
+    error: string;
+  }>;
+}

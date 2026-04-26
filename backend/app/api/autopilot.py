@@ -1,0 +1,82 @@
+"""Autopilot API — accepts JD text + resume ZIP and runs the full multi-agent pipeline."""
+
+import os
+import tempfile
+import zipfile
+from pathlib import Path
+from fastapi import APIRouter, File, Form, UploadFile, HTTPException
+from fastapi.responses import JSONResponse, FileResponse
+
+from app.services.orchestrator import run_full_pipeline
+
+router = APIRouter()
+
+# Path to sample resumes
+SAMPLE_RESUMES_DIR = Path(__file__).resolve().parent.parent.parent.parent / "sample-data" / "resumes"
+
+
+@router.get("/sample-zip")
+async def download_sample_zip():
+    """Generate and return a ZIP of sample resumes for testing."""
+    if not SAMPLE_RESUMES_DIR.exists():
+        raise HTTPException(status_code=404, detail="Sample resumes directory not found.")
+
+    pdfs = list(SAMPLE_RESUMES_DIR.glob("*.pdf")) + list(SAMPLE_RESUMES_DIR.glob("*.docx"))
+    if not pdfs:
+        raise HTTPException(status_code=404, detail="No sample resume PDFs found.")
+
+    zip_path = os.path.join(tempfile.gettempdir(), "sample_resumes.zip")
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for pdf in pdfs:
+            zf.write(str(pdf), pdf.name)
+
+    return FileResponse(zip_path, filename="sample_resumes.zip", media_type="application/zip")
+
+
+@router.post("/run")
+async def run_autopilot(
+    jd_text: str = Form(...),
+    resumes_zip: UploadFile = File(...),
+):
+    """
+    Accepts a JD (plain text) and a ZIP of resume PDFs/DOCXs.
+    Runs the full multi-agent pipeline:
+      JD Parse → Resume Process → Matching → Conversations → Shortlist
+    Returns the final state including the ranked shortlist and step logs.
+    """
+    # Validate zip upload
+    if not resumes_zip.filename or not resumes_zip.filename.lower().endswith(".zip"):
+        raise HTTPException(status_code=400, detail="Please upload a .zip file containing resumes (PDF/DOCX).")
+
+    if not jd_text.strip():
+        raise HTTPException(status_code=400, detail="Job Description text cannot be empty.")
+
+    # Save uploaded zip to temp location
+    zip_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".zip") as tmp:
+            content = await resumes_zip.read()
+            tmp.write(content)
+            zip_path = tmp.name
+
+        print(f"[Autopilot] Saved ZIP: {zip_path} ({len(content)} bytes, original: {resumes_zip.filename})")
+
+        # Run the full multi-agent pipeline
+        final_state = await run_full_pipeline(jd_text.strip(), zip_path)
+
+        return JSONResponse(content={
+            "status": "completed" if not final_state.get("error") else "error",
+            "jd_id": final_state.get("jd_id", 0),
+            "jd_parsed": final_state.get("jd_parsed", {}),
+            "candidates_processed": len(final_state.get("candidate_ids", [])),
+            "shortlist": final_state.get("shortlist", []),
+            "steps_log": final_state.get("steps_log", []),
+            "error": final_state.get("error", ""),
+        })
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Pipeline failed: {str(e)}")
+    finally:
+        if zip_path and os.path.exists(zip_path):
+            os.remove(zip_path)
+

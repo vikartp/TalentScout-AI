@@ -491,7 +491,7 @@ async def run_full_pipeline(raw_jd_text: str, zip_path: str, run_id: Optional[st
         }, run_id)
 
     # Stream the full state after each node completes
-    async for state_event in pipeline.astream(initial_state, stream_mode="values", config={"recursion_limit": 50}):
+    async for state_event in pipeline.astream(initial_state, stream_mode="values", config={"recursion_limit": 100}):
         final_state = state_event
 
         if run_id:

@@ -1,38 +1,52 @@
 # TalentScout AI — Frontend
 
-Next.js frontend for the AI-Powered Talent Scouting & Engagement Agent.
+Next.js frontend for the AI-Powered Talent Scouting & Engagement Agent — featuring a premium dark/light theme, real-time WebSocket pipeline tracking, and session-persistent Autopilot mode.
 
-## Getting Started
+> For the full project documentation, see the [root README](../README.md).
 
-First, run the development server:
+## Setup
 
 ```bash
+cd frontend
+cp .env.example .env.local   # set NEXT_PUBLIC_API_URL (default: http://localhost:8000)
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Default | Description |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Backend API URL |
 
-## Learn More
+## Pages
 
-To learn more about Next.js, take a look at the following resources:
+| Route | Page | Description |
+|-------|------|-------------|
+| `/` | **Dashboard** | Entry point with workflow cards, clear database button, and autopilot banner |
+| `/autopilot` | **Autopilot** | One-click pipeline: JD + resume ZIP → fully automated with live WebSocket progress bar & agent log |
+| `/jd` | **Job Descriptions** | Paste & parse JDs manually via LLM |
+| `/candidates` | **Candidates** | Upload resumes, view parsed profiles, delete individually or clear all (with cascade) |
+| `/matching` | **Matching** | Run matching against a JD, view detailed 4-signal score breakdowns |
+| `/conversations` | **Conversations** | Trigger AI conversations, view transcripts & interest scores |
+| `/shortlist` | **Shortlist** | Final ranked shortlist — auto-loads latest JD and expands top candidate on page visit |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Key Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Real-Time WebSocket Streaming** — Autopilot opens a `ws://` connection using `crypto.randomUUID()` as `run_id`. The LangGraph orchestrator pushes state updates after each agent node completes, instantly updating the progress bar and live log.
+- **Session Persistence** — Autopilot state (JD text, file metadata, logs, completion status) is cached in `sessionStorage`. Navigating away and back restores the full state.
+- **Dark/Light Theme** — Toggle via `next-themes` in the sidebar footer (dark mode default).
+- **Load Sample Data** — One-click button fetches pre-packaged JD + 12 sample resumes from the backend for instant testing.
+- **Auto-Expand Top Candidate** — Shortlist page auto-opens the #1 ranked candidate accordion on load.
+- **Cascade Deletes** — Clearing candidates also removes their matches, conversations, and ChromaDB embeddings.
 
-## Deploy on Vercel
+## Tech Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Next.js 16** + **React 19** — App Router, Server Components
+- **TypeScript** — Full type safety
+- **Tailwind CSS v4** — Utility-first styling with dark mode
+- **next-themes** — Dark/light theme toggle
+- **Lucide React** — Icon library
+- **Native WebSocket** — Real-time pipeline streaming (no socket.io dependency)

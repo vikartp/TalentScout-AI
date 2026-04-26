@@ -1,5 +1,6 @@
 services:
   backend:
+    container_name: vikash-talentscout-backend
     build: ./backend
     ports:
       - "8000:8000"
@@ -10,9 +11,11 @@ services:
       - CHROMA_PERSIST_DIR=./data/chroma_db
     volumes:
       - backend-data:/app/data
+      - ./sample-data:/app/sample-data:ro
     restart: unless-stopped
 
   frontend:
+    container_name: vikash-talentscout-frontend
     build:
       context: ./frontend
       args:

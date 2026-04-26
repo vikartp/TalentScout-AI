@@ -1,6 +1,8 @@
 # TalentScout AI — Backend
 
-FastAPI backend powering JD parsing, resume processing, candidate matching, conversational outreach, and shortlist ranking.
+FastAPI backend powering JD parsing, resume processing, candidate matching, conversational outreach, multi-agent orchestration, and shortlist ranking — with real-time WebSocket progress streaming.
+
+> For the full project documentation, see the [root README](../README.md).
 
 ## Setup
 
@@ -15,14 +17,14 @@ API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ## Environment Variables
 
-| Variable | Description |
-|---|---|
-| `OPENAI_API_KEY` | OpenAI-compatible API key |
-| `OPENAI_API_BASE` | API base URL (default: `https://api.openai.com/v1`) |
-| `DATABASE_URL` | SQLite connection string (default: `sqlite+aiosqlite:///./talentscout.db`) |
-| `CHROMA_PERSIST_DIR` | ChromaDB storage path (default: `./chroma_db`) |
-| `EMBEDDING_MODEL` | Embedding model name (default: `text-embedding-3-large`) |
-| `CHAT_MODEL` | Chat model name (default: `gpt-4o`) |
+| Variable | Default | Description |
+|---|---|---|
+| `OPENAI_API_KEY` | *(required)* | OpenAI-compatible API key |
+| `OPENAI_API_BASE` | `https://api.openai.com/v1` | API base URL |
+| `DATABASE_URL` | `sqlite+aiosqlite:///./talentscout.db` | SQLite connection string |
+| `CHROMA_PERSIST_DIR` | `./chroma_db` | ChromaDB storage path |
+| `EMBEDDING_MODEL` | `text-embedding-3-large` | Embedding model name |
+| `CHAT_MODEL` | `gpt-4o` | Chat model name |
 
 ## API Endpoints
 
@@ -31,7 +33,7 @@ API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/` | Health check |
-| `DELETE` | `/api/reset` | Drop and recreate all database tables |
+| `DELETE` | `/api/reset` | Drop and recreate all database tables + clear ChromaDB |
 
 ### Job Descriptions — `/api/jd`
 
@@ -49,7 +51,8 @@ API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 | `POST` | `/api/candidates/upload` | Upload resumes (PDF/DOCX), parse via LLM, store embeddings |
 | `GET` | `/api/candidates/` | List all candidates |
 | `GET` | `/api/candidates/{id}` | Get full candidate detail |
-| `DELETE` | `/api/candidates/clear` | Clear all candidates and embeddings |
+| `DELETE` | `/api/candidates/{id}` | Delete candidate + cascade (matches, conversations, embeddings) |
+| `DELETE` | `/api/candidates/clear` | Clear all candidates + cascade all related data |
 
 ### Matching — `/api/matching`
 
@@ -76,6 +79,26 @@ API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 > Query param: `match_weight` (0–1, default 0.6) controls the match vs interest balance.
 
+### Autopilot — `/api/autopilot`
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/autopilot/run` | Run full multi-agent pipeline (JD text + resume ZIP → shortlist). Accepts optional `run_id` form field to link with WebSocket. |
+| `GET` | `/api/autopilot/sample-zip` | Download pre-packaged sample resumes ZIP for testing |
+| `WS` | `/api/autopilot/ws/{run_id}` | WebSocket endpoint for real-time pipeline progress streaming |
+
+## Services
+
+| Service | File | Description |
+|---|---|---|
+| **JD Parser** | `services/jd_parser.py` | LLM-based JD parsing into structured fields |
+| **Resume Parser** | `services/resume_parser.py` | PDF/DOCX text extraction + LLM parsing into structured candidate data |
+| **Matching Engine** | `services/matching_engine.py` | Multi-signal scoring: semantic similarity (40%), fuzzy skill match (30%), experience fit (15%), education match (15%) |
+| **Conversation Agent** | `services/conversation_agent.py` | Simulates multi-turn recruiter-candidate dialogue (4 turns), then scores enthusiasm, availability, salary alignment, cultural fit |
+| **Ranking Engine** | `services/ranking_engine.py` | Combines match_score and interest_score with configurable weights (default 60/40) into final ranked shortlist |
+| **Orchestrator** | `services/orchestrator.py` | LangGraph-powered sequential multi-agent pipeline (Supervisor → JD Parser → Resume Processor → Matching → Conversation → Shortlist) with `astream` for real-time WebSocket broadcasting |
+| **WS Manager** | `services/ws_manager.py` | WebSocket connection manager — tracks active connections by `run_id` and broadcasts JSON state updates |
+
 ## Data Models
 
 ### JobDescription
@@ -90,43 +113,12 @@ API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 ### Conversation
 `id`, `jd_id`, `candidate_id`, `transcript`, `interest_score`, `enthusiasm`, `availability`, `salary_alignment`, `cultural_fit`, `score_explanation`, `status`, `created_at`
 
-## Services
-
-| Service | Description |
-|---|---|
-| `jd_parser.py` | LLM-based JD parsing into structured fields |
-| `resume_parser.py` | PDF/DOCX text extraction + LLM parsing into structured candidate data |
-| `matching_engine.py` | Multi-signal scoring: semantic similarity (40%), fuzzy skill match (30%), experience fit (15%), education match (15%) |
-| `conversation_agent.py` | Simulates multi-turn recruiter-candidate dialogue (4 turns), then scores enthusiasm, availability, salary alignment, cultural fit |
-| `ranking_engine.py` | Combines match_score and interest_score with configurable weights (default 60/40) into final ranked shortlist |
-
-## Data Flow
-
-```
-Upload Resume → extract text → parse via LLM → store Candidate + embedding in ChromaDB
-
-Parse JD → parse via LLM → store JobDescription
-
-Run Matching (for a JD)
-  → For each candidate: semantic + skill + experience + education scoring
-  → LLM generates match explanation
-  → Store MatchResult (replaces previous results for same JD)
-
-Start Conversation (JD + Candidate)
-  → LLM simulates 4-turn recruiter-candidate dialogue
-  → LLM scores the transcript for interest signals
-  → Store Conversation with scores
-
-Get Shortlist (for a JD)
-  → Fetch MatchResults + Conversations
-  → Combine match_score & interest_score with configurable weights
-  → Return ranked shortlist
-```
-
 ## Tech Stack
 
 - **FastAPI** + **Uvicorn** — async web framework
+- **LangGraph** — multi-agent orchestration (StateGraph with sequential edges)
 - **SQLModel** + **aiosqlite** — async SQLite ORM
 - **ChromaDB** — persistent vector database for resume embeddings
 - **OpenAI SDK** + **LangChain** — LLM calls and embedding generation
 - **pdfplumber** / **python-docx** — document text extraction
+- **WebSocket** — native FastAPI WebSocket for real-time progress streaming
